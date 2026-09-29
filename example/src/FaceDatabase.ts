@@ -1,0 +1,189 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PEOPLE_KEY = 'face_enrolled_people_v1';
+const SETTINGS_KEY = 'face_settings_sdk_v1';
+const PREFS_SCHEMA_KEY = 'prefs_schema';
+/** Match Android SettingsActivity.PREFS_SCHEMA_VW */
+const PREFS_SCHEMA_VW = 4;
+
+export type EnrolledPerson = {
+  id: string;
+  name: string;
+  featureB64: string;
+  thumbB64: string | null;
+};
+
+export type LandmarkMode = 14 | 68;
+
+/** Always High Accuracy (2d_ensemble_heavy). Light model is not shipped. */
+export function getLivenessLevel(): 0 {
+  return 0;
+}
+
+export type AppSettings = {
+  camera_lens: 'front' | 'back';
+  liveness_threshold: number;
+  /** Always 0 (heavy). Kept for Capture/Identify param shape; ignored in UI. */
+  liveness_level: 0 | 1;
+  identify_threshold: number;
+  yaw_threshold: number;
+  roll_threshold: number;
+  pitch_threshold: number;
+  eyeclose_threshold: number;
+  /** Seconds face must stay valid before capture (Android identity_hold_duration). */
+  identity_hold_duration: number;
+  landmark_mode: LandmarkMode;
+};
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  camera_lens: 'front',
+  liveness_threshold: 0.5,
+  liveness_level: 0,
+  identify_threshold: 0.67,
+  yaw_threshold: 40,
+  roll_threshold: 40,
+  pitch_threshold: 40,
+  eyeclose_threshold: 0.5,
+  identity_hold_duration: 0.5,
+  landmark_mode: 68,
+};
+
+export async function loadPeople(): Promise<EnrolledPerson[]> {
+  const raw = await AsyncStorage.getItem(PEOPLE_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function savePeople(people: EnrolledPerson[]): Promise<void> {
+  await AsyncStorage.setItem(PEOPLE_KEY, JSON.stringify(people));
+}
+
+export async function addPerson(
+  name: string,
+  featureB64: string,
+  thumbB64: string | null
+): Promise<EnrolledPerson> {
+  const people = await loadPeople();
+  const person: EnrolledPerson = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    featureB64,
+    thumbB64,
+  };
+  people.push(person);
+  await savePeople(people);
+  return person;
+}
+
+export async function deletePerson(id: string): Promise<void> {
+  const people = await loadPeople();
+  await savePeople(people.filter((p) => p.id !== id));
+}
+
+export async function clearAllPeople(): Promise<void> {
+  await AsyncStorage.removeItem(PEOPLE_KEY);
+}
+
+export function autoPersonName(): string {
+  return `Person${10000 + Math.floor(Math.random() * 10000)}`;
+}
+
+function parseLandmarkMode(v: unknown): LandmarkMode {
+  const n = typeof v === 'number' ? v : parseInt(String(v), 10);
+  if (n === 14 || n === 68) return n;
+  return 68;
+}
+
+function num(v: unknown, fallback: number): number {
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/** Write Face SDK defaults once so capture is not stuck on old prefs (Android applyEngineDefaults). */
+export async function applyEngineDefaults(): Promise<void> {
+  const schemaRaw = await AsyncStorage.getItem(PREFS_SCHEMA_KEY);
+  const schema = schemaRaw ? parseInt(schemaRaw, 10) : 0;
+  if (Number.isFinite(schema) && schema >= PREFS_SCHEMA_VW) return;
+  await saveSettings({ ...DEFAULT_SETTINGS });
+  await AsyncStorage.setItem(PREFS_SCHEMA_KEY, String(PREFS_SCHEMA_VW));
+}
+
+export async function loadSettings(): Promise<AppSettings> {
+  await applyEngineDefaults();
+  const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+  if (!raw) return { ...DEFAULT_SETTINGS };
+  try {
+    const p = JSON.parse(raw);
+    const hold = num(
+      p.identity_hold_duration,
+      DEFAULT_SETTINGS.identity_hold_duration
+    );
+    return {
+      camera_lens: p.camera_lens === 'back' ? 'back' : 'front',
+      liveness_threshold: num(
+        p.liveness_threshold,
+        DEFAULT_SETTINGS.liveness_threshold
+      ),
+      liveness_level: getLivenessLevel(),
+      identify_threshold: num(
+        p.identify_threshold,
+        DEFAULT_SETTINGS.identify_threshold
+      ),
+      yaw_threshold: num(p.yaw_threshold, DEFAULT_SETTINGS.yaw_threshold),
+      roll_threshold: num(p.roll_threshold, DEFAULT_SETTINGS.roll_threshold),
+      pitch_threshold: num(p.pitch_threshold, DEFAULT_SETTINGS.pitch_threshold),
+      eyeclose_threshold: num(
+        p.eyeclose_threshold,
+        DEFAULT_SETTINGS.eyeclose_threshold
+      ),
+      identity_hold_duration: Math.min(5, Math.max(0.1, hold)),
+      landmark_mode: parseLandmarkMode(p.landmark_mode),
+    };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export async function saveSettings(settings: AppSettings): Promise<void> {
+  const cleaned: AppSettings = {
+    ...settings,
+    liveness_level: getLivenessLevel(),
+    identity_hold_duration: Math.min(
+      5,
+      Math.max(0.1, settings.identity_hold_duration)
+    ),
+  };
+  await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(cleaned));
+}
+
+export async function restoreDefaultSettings(): Promise<AppSettings> {
+  const s = { ...DEFAULT_SETTINGS };
+  await saveSettings(s);
+  await AsyncStorage.setItem(PREFS_SCHEMA_KEY, String(PREFS_SCHEMA_VW));
+  return s;
+}
+
+export function getIdentityHoldDurationMs(settings: AppSettings): number {
+  return Math.max(100, Math.round(settings.identity_hold_duration * 1000));
+}
+
+export function livenessPassed(
+  settings: AppSettings,
+  score: number,
+  label?: string
+): boolean {
+  const lower = (label ?? '').toLowerCase();
+  if (lower.includes('spoof') || lower.includes('fake')) return false;
+  return score >= settings.liveness_threshold;
+}
+
+export function qualityText(score: number): string {
+  if (score < 0.5) return `Low · ${Math.round(score * 100)}%`;
+  if (score < 0.75) return `Medium · ${Math.round(score * 100)}%`;
+  return `High · ${Math.round(score * 100)}%`;
+}
