@@ -138,9 +138,9 @@ Demo ids: Android `com.identixia.facerecognitionsdk` · iOS `com.identixia.facer
 
 The code below shows how to use the license:
 
-https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/d29854f3be4f959916cd561fcb4276bb29959847/example/src/license.ts#L8-L18
+https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/beee84a61a3911fd3e66ba7889e394a658f697b9/example/src/license.ts#L8-L18
 
-https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/d29854f3be4f959916cd561fcb4276bb29959847/example/src/SdkContext.tsx#L72-L80
+https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/beee84a61a3911fd3e66ba7889e394a658f697b9/example/src/SdkContext.tsx#L72-L80
 
 Capabilities: face recognition (detect / templates / match) and/or passive face liveness. Please [contact us](#-contact) to get a license for **your own app**.
 
