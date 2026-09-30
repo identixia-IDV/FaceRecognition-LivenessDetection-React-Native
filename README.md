@@ -26,15 +26,15 @@ Package: `face-recognition-sdk`. Demo modes: **Enroll · Identify · Capture · 
 
 ## <img src="https://api.iconify.design/lucide/clipboard-list.svg?color=%230F766E" width="24" height="24" alt="" /> Basics
 
-Read this once before cloning. Plugin demos ship a **bundled license** for the sample Android / iOS ids. Production apps need a new key. [Initial commands](#-initial-commands) lists clone → run → activate. The example uses the engines already in this repo. Your app installs tag `v1.0.0`.
+Read this once before cloning. Plugin demos ship a **bundled license** for the sample Android / iOS ids. Production apps need a new key. [Initial commands](#-initial-commands) lists clone → place runtime → run → activate options.
 
 | Topic | Basic information |
 | --- | --- |
 | **Product** | On-device **face recognition** React Native plugin |
 | **Modes** | Enroll · Identify (1:N) · Capture · Attribute |
 | **API** | Detect · templates · identify · optional passive liveness |
-| **Runtime** | Example uses `example/android/libfacesdk/` and `ios/Frameworks/` when those files are already here. Your app installs tag `v1.0.0` |
-| **Demo id** | Android `com.identixia.facerecognitionsdk` · iOS `com.identixia.facerecognitionsdk.app` |
+| **Runtime** | Android AAR + iOS frameworks from Drive zips `PENDING` |
+| **Demo id** | `com.identixia.facerecognitionsdk` |
 | **Tools** | Yarn · physical arm64 Android / iPhone (not Expo Go) |
 | **UI** | Four demo modes after Ready |
 | **Privacy** | Templates stay on device — no Identixia cloud |
@@ -46,11 +46,12 @@ Read this once before cloning. Plugin demos ship a **bundled license** for the s
 
 Must-know path for the sample / example app.
 
-### <img src="https://img.shields.io/badge/-1-0F766E?style=for-the-badge" alt="" /> Clone and run
+### <img src="https://img.shields.io/badge/-1-0F766E?style=for-the-badge" alt="" /> Clone, place runtime, run
 
 ```bash
 git clone https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native.git
 cd FaceRecognition-LivenessDetection-React-Native
+# place runtimes
 yarn
 cd example && yarn android
 # iOS: yarn ios --device
@@ -105,13 +106,14 @@ Wait until Home = **Ready**, then Camera / Gallery. Confirm Result / About shows
 
 ## <img src="https://api.iconify.design/lucide/package.svg?color=%230F766E" width="24" height="24" alt="" /> Install
 
-The example uses the AAR and frameworks already in this repo. A native build downloads the `v1.0.0` GitHub Releases only when a file is missing. Expo Go cannot load this engine.
+The example builds with native runtimes already in the clone when present. Gradle / CocoaPods download the `v1.0.0` GitHub Releases only when a file is missing.
 
-Your app:
+- `example/android/libfacesdk/facerecognitionsdk.aar`
+- `ios/Frameworks/`
 
-```bash
-npm install github:Identixia/FaceRecognition-LivenessDetection-React-Native#v1.0.0
-```
+Customer apps depend on `face-recognition-sdk` from this repo at tag `v1.0.0` (Flutter: git dependency; React Native / Ionic: npm / github package). Do **not** use a monorepo `path:` dependency in shipping apps.
+
+Android: keep `packaging { jniLibs { useLegacyPackaging = true } }` so `libFaceRecognitionEngine.so` is extracted for `nativeInitEngine`.
 
 ---
 
@@ -120,6 +122,7 @@ npm install github:Identixia/FaceRecognition-LivenessDetection-React-Native#v1.0
 ```bash
 git clone https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native.git
 cd FaceRecognition-LivenessDetection-React-Native
+# place runtimes
 yarn
 cd example && yarn android
 # iOS: yarn ios --device
@@ -134,13 +137,13 @@ After Ready, open **Enroll · Identify · Capture · Attribute**.
 
 ## <img src="https://api.iconify.design/lucide/key-round.svg?color=%230F766E" width="24" height="24" alt="" /> License
 
-Demo ids: Android `com.identixia.facerecognitionsdk` · iOS `com.identixia.facerecognitionsdk.app`.
+Demo id: `com.identixia.facerecognitionsdk`.
 
 The code below shows how to use the license:
 
-https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/beee84a61a3911fd3e66ba7889e394a658f697b9/example/src/license.ts#L8-L18
+[https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/2fbb291298079502965c71833057b2465903e32b/example/src/license.ts#L11-L18](https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/2fbb291298079502965c71833057b2465903e32b/example/src/license.ts#L11-L18)
 
-https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/beee84a61a3911fd3e66ba7889e394a658f697b9/example/src/SdkContext.tsx#L72-L80
+[https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/2fbb291298079502965c71833057b2465903e32b/example/src/SdkContext.tsx#L60-L75](https://github.com/identixia-IDV/FaceRecognition-LivenessDetection-React-Native/blob/2fbb291298079502965c71833057b2465903e32b/example/src/SdkContext.tsx#L60-L75)
 
 Capabilities: face recognition (detect / templates / match) and/or passive face liveness. Please [contact us](#-contact) to get a license for **your own app**.
 
@@ -148,14 +151,16 @@ Capabilities: face recognition (detect / templates / match) and/or passive face 
 
 ## <img src="https://api.iconify.design/lucide/puzzle.svg?color=%230F766E" width="24" height="24" alt="" /> Use in your app
 
-Install `face-recognition-sdk` at tag `v1.0.0`, then enroll / identify / capture from JS/TS on a physical device.
+Add `face-recognition-sdk`, place native runtimes, then enroll / identify / capture from JS/TS. Physical device required.
+
+Typical flow: depend on `face-recognition-sdk` at `v1.0.0` → ship / download native runtimes → activate → init → enroll / identify / capture. Prefer package kits (`FaceCapture`, …) over reinventing the camera UI. Keep demo ids only while using sample licenses.
 
 | Step | Detail |
 | --- | --- |
-| 1 | `npm install github:Identixia/FaceRecognition-LivenessDetection-React-Native#v1.0.0` |
-| 2 | Rebuild the native app |
-| 3 | Activate → init |
-| 4 | Enroll / Identify (1:N) / Capture / Attribute, plus liveness when licensed |
+| 1 | Depend on `face-recognition-sdk` at tag `v1.0.0` (standalone clone — no monorepo `path:`) |
+| 2 | Keep or download Android AAR + iOS frameworks (`v1.0.0` Release) |
+| 3 | Activate → init on a physical device (`useLegacyPackaging = true` on Android) |
+| 4 | Wire Enroll / Identify (1:N) / Capture / Attribute (+ liveness if licensed) |
 
 ---
 
