@@ -1,0 +1,4 @@
+module facefullsdk {
+  umbrella header "FaceFullSDK.h"
+  export *
+}

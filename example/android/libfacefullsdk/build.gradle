@@ -1,0 +1,11 @@
+// Consumes Identixia Face Recognition AAR (same as FaceRecognition-Android-App).
+// Drop facefullsdk.aar here from the Android Drive folder / App export.
+def aar = file("facefullsdk.aar")
+if (!aar.exists()) {
+    throw new GradleException(
+        "Missing example/android/libfacefullsdk/facefullsdk.aar.\n" +
+        "Copy it from FaceRecognition-Android-App/libfacefullsdk/ or the Drive Android pack."
+    )
+}
+configurations.maybeCreate("default")
+artifacts.add("default", aar)
